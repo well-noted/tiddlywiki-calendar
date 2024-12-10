@@ -18,3 +18,12 @@
 .tc-sidebar-scrollable.tc-sidebar-hidden .event-calendar-sidebar {
     overflow: hidden !important;
 }
+
+.event-context-menu button:hover {
+    background: #4565c0;
+}
+
+.event-context-menu input:focus {
+    outline: 2px solid #5778d8;
+    border-color: #5778d8;
+}

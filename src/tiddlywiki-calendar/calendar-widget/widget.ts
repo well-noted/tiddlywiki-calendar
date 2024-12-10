@@ -15028,7 +15028,6 @@ function getHandlers(c) {
 }
 
 
-
 function getSearchModeSettings() {
     return {
         initialView: "searchResultList",
@@ -15045,16 +15044,197 @@ function getSearchModeSettings() {
     }
 }
 
+function showTagContextMenu(event, mouseEvent) {
+    // Remove any existing context menus
+    const existingMenu = document.getElementById('event-context-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+    }
+
+    // Create context menu
+    const contextMenu = document.createElement('div');
+    contextMenu.id = 'event-context-menu';
+    contextMenu.style.cssText = `
+        position: fixed;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 1000;
+        min-width: 150px;
+    `;
+
+    // Add tag input
+    const tagInput = document.createElement('input');
+    tagInput.type = 'text';
+    tagInput.placeholder = 'Enter new tag';
+    tagInput.style.cssText = `
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 4px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+    `;
+
+    // Add button
+    const addButton = document.createElement('button');
+    addButton.textContent = 'Add Tag';
+    addButton.style.cssText = `
+        padding: 4px 8px;
+        background: #5778d8;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    `;
+
+    addButton.addEventListener('click', () => {
+        const newTag = tagInput.value.trim();
+        if (newTag) {
+            // Get the tiddler title from the event
+            const tiddlerTitle = event.title;
+            
+            // Add the tag using TiddlyWiki's API
+            const tiddler = $tw.wiki.getTiddler(tiddlerTitle);
+            if (tiddler) {
+                const currentTags = tiddler.fields.tags || [];
+                if (!currentTags.includes(newTag)) {
+                    const newTiddler = new $tw.Tiddler(tiddler, {
+                        tags: [...currentTags, newTag]
+                    });
+                    $tw.wiki.addTiddler(newTiddler);
+                }
+            }
+            contextMenu.remove();
+        }
+    });
+
+    // Add elements to context menu
+    contextMenu.appendChild(tagInput);
+    contextMenu.appendChild(addButton);
+
+    // Position the context menu
+    contextMenu.style.left = mouseEvent.pageX + 'px';
+    contextMenu.style.top = mouseEvent.pageY + 'px';
+
+    // Add to document
+    document.body.appendChild(contextMenu);
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function closeMenu(e) {
+        if (!contextMenu.contains(e.target)) {
+            contextMenu.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    });
+
+    // Prevent default context menu
+    document.addEventListener('contextmenu', function preventContext(e) {
+        e.preventDefault();
+        document.removeEventListener('contextmenu', preventContext);
+    }, { once: true });
+}
+
 function initCalendar(e, M) {
     // Create toggle controls container
     let toggleContainer = document.createElement('div');
     toggleContainer.className = 'calendar-tag-toggles';
     e.parentNode.insertBefore(toggleContainer, e);
     
-    // Initialize calendar with original settings
-    var calendar = new Calendar(e, getSettings(M));
+    // Initialize calendar with modified settings
+    const settings = getSettings(M);
+    settings.eventDidMount = function(info) {
+        info.el.addEventListener('contextmenu', function(e) {
+            e.preventDefault(); // Prevent default context menu
+            
+            // Remove existing context menu if any
+            const existingMenu = document.getElementById('event-context-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+
+            // Create context menu
+            const contextMenu = document.createElement('div');
+            contextMenu.id = 'event-context-menu';
+            contextMenu.style.cssText = `
+                position: fixed;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                z-index: 1000;
+                min-width: 150px;
+            `;
+
+            // Add tag input
+            const tagInput = document.createElement('input');
+            tagInput.type = 'text';
+            tagInput.placeholder = 'Enter new tag';
+            tagInput.style.cssText = `
+                width: 100%;
+                margin-bottom: 8px;
+                padding: 4px;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+            `;
+
+            // Add button
+            const addButton = document.createElement('button');
+            addButton.textContent = 'Add Tag';
+            addButton.style.cssText = `
+                padding: 4px 8px;
+                background: #5778d8;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+            `;
+
+            addButton.addEventListener('click', () => {
+                const newTag = tagInput.value.trim();
+                if (newTag) {
+                    const tiddlerTitle = info.event.title;
+                    const tiddler = $tw.wiki.getTiddler(tiddlerTitle);
+                    if (tiddler) {
+                        const currentTags = tiddler.fields.tags || [];
+                        if (!currentTags.includes(newTag)) {
+                            const newTiddler = new $tw.Tiddler(tiddler, {
+                                tags: [...currentTags, newTag]
+                            });
+                            $tw.wiki.addTiddler(newTiddler);
+                            calendar.render(); // Refresh calendar
+                            updateTagToggles(); // Update tag toggles
+                        }
+                    }
+                    contextMenu.remove();
+                }
+            });
+
+            // Add elements to context menu
+            contextMenu.appendChild(tagInput);
+            contextMenu.appendChild(addButton);
+
+            // Position the context menu
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+
+            // Add to document
+            document.body.appendChild(contextMenu);
+
+            // Close menu when clicking outside
+            document.addEventListener('click', function closeMenu(evt) {
+                if (!contextMenu.contains(evt.target)) {
+                    contextMenu.remove();
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        });
+    };
     
-    // Add tag filtering functionality
+    var calendar = new Calendar(e, settings);
+    
     function updateTagToggles() {
         // Get all unique tags from events
         let tags = new Set();
