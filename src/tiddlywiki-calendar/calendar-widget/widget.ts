@@ -13684,15 +13684,32 @@ var css_248z5 = '.fc-v-event{background-color:var(--fc-event-bg-color);border:1p
     }),
     import_moment_timezone5 = __toESM(require_moment_timezone2());
 
-function enableSidebarDraggable(M) {
-    setTimeout(() => {
-        var e = M.containerElement?.parentElement?.parentElement?.querySelector(".event-calendar-sidebar");
-        e && new ExternalDraggable(e, {
-            itemSelector: ".tc-draggable",
-            appendTo: M.containerElement
-        })
-    }, 1)
-}
+    function enableSidebarDraggable(M) {
+        setTimeout(() => {
+            var e = M.containerElement?.parentElement?.parentElement?.querySelector(".event-calendar-sidebar");
+            if (e) {
+                // Check if mobile
+                let isMobile = "yes" === $tw.wiki.getTiddlerText("$:/info/browser/is/mobile") || 
+                    "yes" === $tw.wiki.getTiddlerText("$:/info/tidgi-mobile") || 
+                    window.innerWidth < 960;
+    
+                if (isMobile) {
+                    // Set mobile width
+                    const mobileWidth = window.innerWidth - 40;
+                    e.style.width = mobileWidth + 'px';
+                    e.style.minWidth = mobileWidth + 'px';
+                    e.style.maxWidth = mobileWidth + 'px';
+                    e.style.marginRight = '40px';
+                }
+    
+                // Initialize draggable
+                new ExternalDraggable(e, {
+                    itemSelector: ".tc-draggable",
+                    appendTo: M.containerElement
+                });
+            }
+        }, 1);
+    }
 
 function setToolbarIcons() {
     var e, M = document.querySelector(".fc-backToStandardLayout-button"),
@@ -15044,97 +15061,146 @@ function getSearchModeSettings() {
     }
 }
 
-function showTagContextMenu(event, mouseEvent) {
-    // Remove any existing context menus
-    const existingMenu = document.getElementById('event-context-menu');
-    if (existingMenu) {
-        existingMenu.remove();
-    }
+// function showTagContextMenu(info, mouseEvent) {
+//     // Get the tiddler title from the event
+//     const tiddlerTitle = info.event.title;
+//     const tiddler = $tw.wiki.getTiddler(tiddlerTitle);
+    
+//     // Create context menu
+//     const contextMenu = document.createElement('div');
+//     contextMenu.id = 'event-context-menu';
+//     contextMenu.style.cssText = `
+//         position: fixed;
+//         background: white;
+//         border: 1px solid #ddd;
+//         border-radius: 4px;
+//         padding: 8px;
+//         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+//         z-index: 1000;
+//         min-width: 200px;
+//     `;
 
-    // Create context menu
-    const contextMenu = document.createElement('div');
-    contextMenu.id = 'event-context-menu';
-    contextMenu.style.cssText = `
-        position: fixed;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        z-index: 1000;
-        min-width: 150px;
-    `;
+//     // Create existing tags section
+//     const existingTagsContainer = document.createElement('div');
+//     existingTagsContainer.style.cssText = `
+//         margin-bottom: 12px;
+//         display: flex;
+//         flex-wrap: wrap;
+//         gap: 4px;
+//     `;
 
-    // Add tag input
-    const tagInput = document.createElement('input');
-    tagInput.type = 'text';
-    tagInput.placeholder = 'Enter new tag';
-    tagInput.style.cssText = `
-        width: 100%;
-        margin-bottom: 8px;
-        padding: 4px;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-    `;
+//     // Get current tags from the tiddler
+//     if (tiddler && tiddler.fields.tags) {
+//         tiddler.fields.tags.forEach(tag => {
+//             const tagElement = document.createElement('div');
+//             tagElement.style.cssText = `
+//                 background: #e8e8e8;
+//                 border-radius: 12px;
+//                 padding: 2px 8px;
+//                 margin: 2px;
+//                 display: inline-flex;
+//                 align-items: center;
+//                 font-size: 0.9em;
+//             `;
 
-    // Add button
-    const addButton = document.createElement('button');
-    addButton.textContent = 'Add Tag';
-    addButton.style.cssText = `
-        padding: 4px 8px;
-        background: #5778d8;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-    `;
+//             const tagText = document.createElement('span');
+//             tagText.textContent = tag;
+//             tagText.style.marginRight = '4px';
 
-    addButton.addEventListener('click', () => {
-        const newTag = tagInput.value.trim();
-        if (newTag) {
-            // Get the tiddler title from the event
-            const tiddlerTitle = event.title;
-            
-            // Add the tag using TiddlyWiki's API
-            const tiddler = $tw.wiki.getTiddler(tiddlerTitle);
-            if (tiddler) {
-                const currentTags = tiddler.fields.tags || [];
-                if (!currentTags.includes(newTag)) {
-                    const newTiddler = new $tw.Tiddler(tiddler, {
-                        tags: [...currentTags, newTag]
-                    });
-                    $tw.wiki.addTiddler(newTiddler);
-                }
-            }
-            contextMenu.remove();
-        }
-    });
+//             const deleteButton = document.createElement('span');
+//             deleteButton.innerHTML = '×';
+//             deleteButton.style.cssText = `
+//                 cursor: pointer;
+//                 color: #666;
+//                 font-weight: bold;
+//                 margin-left: 4px;
+//                 width: 16px;
+//                 height: 16px;
+//                 display: flex;
+//                 align-items: center;
+//                 justify-content: center;
+//                 border-radius: 50%;
+//             `;
 
-    // Add elements to context menu
-    contextMenu.appendChild(tagInput);
-    contextMenu.appendChild(addButton);
+//             deleteButton.addEventListener('click', () => {
+//                 const updatedTags = tiddler.fields.tags.filter(t => t !== tag);
+//                 const newTiddler = new $tw.Tiddler(tiddler, {
+//                     tags: updatedTags
+//                 });
+//                 $tw.wiki.addTiddler(newTiddler);
+//                 calendar.refetchEvents();
+//                 contextMenu.remove();
+//             });
 
-    // Position the context menu
-    contextMenu.style.left = mouseEvent.pageX + 'px';
-    contextMenu.style.top = mouseEvent.pageY + 'px';
+//             tagElement.appendChild(tagText);
+//             tagElement.appendChild(deleteButton);
+//             existingTagsContainer.appendChild(tagElement);
+//         });
+//     }
 
-    // Add to document
-    document.body.appendChild(contextMenu);
+//     // Add the existing tags container to the context menu
+//     contextMenu.appendChild(existingTagsContainer);
 
-    // Close menu when clicking outside
-    document.addEventListener('click', function closeMenu(e) {
-        if (!contextMenu.contains(e.target)) {
-            contextMenu.remove();
-            document.removeEventListener('click', closeMenu);
-        }
-    });
+//     // Add the input for new tags
+//     const tagInput = document.createElement('input');
+//     tagInput.type = 'text';
+//     tagInput.placeholder = 'Enter new tag';
+//     tagInput.style.cssText = `
+//         width: calc(100% - 16px);
+//         margin: 8px 0;
+//         padding: 4px 8px;
+//         border: 1px solid #ddd;
+//         border-radius: 3px;
+//     `;
 
-    // Prevent default context menu
-    document.addEventListener('contextmenu', function preventContext(e) {
-        e.preventDefault();
-        document.removeEventListener('contextmenu', preventContext);
-    }, { once: true });
+//     const addButton = document.createElement('button');
+//     addButton.textContent = 'Add Tag';
+//     addButton.style.cssText = `
+//         padding: 4px 8px;
+//         background: #5778d8;
+//         color: white;
+//         border: none;
+//         border-radius: 3px;
+//         cursor: pointer;
+//         width: 100%;
+//     `;
+
+//     // Position and show the context menu
+//     contextMenu.style.left = mouseEvent.pageX + 'px';
+//     contextMenu.style.top = mouseEvent.pageY + 'px';
+
+//     // Add the input and button
+//     contextMenu.appendChild(tagInput);
+//     contextMenu.appendChild(addButton);
+
+//     // Add to document
+//     document.body.appendChild(contextMenu);
+
+//     // Close menu when clicking outside
+//     document.addEventListener('click', function closeMenu(e) {
+//         if (!contextMenu.contains(e.target)) {
+//             contextMenu.remove();
+//             document.removeEventListener('click', closeMenu);
+//         }
+//     });
+// }
+
+function getContrastColor(hexcolor) {
+    // Remove the # if present
+    hexcolor = hexcolor.replace('#', '');
+    
+    // Convert to RGB
+    const r = parseInt(hexcolor.substr(0,2),16);
+    const g = parseInt(hexcolor.substr(2,2),16);
+    const b = parseInt(hexcolor.substr(4,2),16);
+    
+    // Calculate luminance
+    const yiq = ((r*299)+(g*587)+(b*114))/1000;
+    
+    // Return black or white depending on background brightness
+    return (yiq >= 128) ? '#000000' : '#ffffff';
 }
+
 
 function initCalendar(e, M) {
     // Create toggle controls container
@@ -15156,31 +15222,171 @@ function initCalendar(e, M) {
 
             // Create context menu
             const contextMenu = document.createElement('div');
+contextMenu.id = 'event-context-menu';
+            const originalEvent = e;
             contextMenu.id = 'event-context-menu';
-            contextMenu.style.cssText = `
-                position: fixed;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                padding: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                z-index: 1000;
-                min-width: 150px;
+            contextMenu.style.cssText += `
+            position: fixed;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 12px;
+            padding-top: 24px; /* Add extra padding at top for close button */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            z-index: 1000;
+            min-width: 200px;
+            color: #ffffff;
+        `;
+
+            const closeButtonContainer = document.createElement('div');
+            closeButtonContainer.style.cssText = `
+                position: absolute;
+                top: 5px;
+                right: 5px;
             `;
+
+            // Create close button
+            const closeButton = document.createElement('span');
+            closeButton.innerHTML = '×';
+            closeButton.style.cssText = `
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: bold;
+                color: #999;
+                padding: 2px 6px;
+            `;
+
+            // Add hover effect
+            closeButton.addEventListener('mouseover', () => {
+                closeButton.style.color = '#fff';
+            });
+            closeButton.addEventListener('mouseout', () => {
+                closeButton.style.color = '#999';
+            });
+
+            // Add click handler
+            closeButton.addEventListener('click', (evt) => {
+                evt.stopPropagation();
+                contextMenu.remove();
+            });
+
+            // Create existing tags section
+            const existingTagsContainer = document.createElement('div');
+            existingTagsContainer.style.cssText = `
+                margin-bottom: 12px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            `;
+
+            // Get current tags from the tiddler
+            const tiddlerTitle = info.event.title;
+            const tiddler = $tw.wiki.getTiddler(tiddlerTitle);
+            if (tiddler && tiddler.fields.tags) {
+                tiddler.fields.tags.forEach(tag => {
+                    const tagTiddler = $tw.wiki.getTiddler(tag);
+                    const tagColor = tagTiddler && tagTiddler.fields.color || "#e8e8e8"; // default color if none set
+                    
+                    const tagElement = document.createElement('div');
+                    tagElement.style.cssText = `
+                        background: ${tagColor};
+                        border-radius: 12px;
+                        padding: 2px 8px;
+                        margin: 2px;
+                        display: inline-flex;
+                        align-items: center;
+                        font-size: 0.9em;
+                        color: ${getContrastColor(tagColor)}; /* Add contrasting text color */
+                    `;
+
+                    const tagText = document.createElement('span');
+                    tagText.textContent = tag;
+                    tagText.style.marginRight = '4px';
+
+                    const deleteButton = document.createElement('span');
+                    deleteButton.innerHTML = '×';
+                    deleteButton.style.cssText = `
+                        cursor: pointer;
+                        color: #666;
+                        font-weight: bold;
+                        margin-left: 4px;
+                    `;
+
+                    deleteButton.addEventListener('click', (evt) => {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        const updatedTags = tiddler.fields.tags.filter(t => t !== tag);
+                        const newTiddler = new $tw.Tiddler(tiddler, {
+                            tags: updatedTags
+                        });
+                        $tw.wiki.addTiddler(newTiddler);
+                        calendar.refetchEvents();
+                        updateTagToggles();
+                        
+                        // Trigger a new contextmenu event to refresh the menu
+                        const event = new MouseEvent('contextmenu', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window,
+                            button: 2,
+                            buttons: 2,
+                            clientX: e.clientX,
+                            clientY: e.clientY
+                        });
+                        info.el.dispatchEvent(event);
+                    });
+
+                    tagElement.appendChild(tagText);
+                    tagElement.appendChild(deleteButton);
+                    existingTagsContainer.appendChild(tagElement);
+                });
+            }
 
             // Add tag input
             const tagInput = document.createElement('input');
             tagInput.type = 'text';
             tagInput.placeholder = 'Enter new tag';
             tagInput.style.cssText = `
-                width: 100%;
-                margin-bottom: 8px;
-                padding: 4px;
-                border: 1px solid #ddd;
+                width: calc(100% - 16px);
+                margin: 8px 0;
+                padding: 4px 8px;
+                border: 1px solid #444;
                 border-radius: 3px;
+                background: #2d2d2d;
+                color: #ffffff;
             `;
+           
+            tagInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const newTag = tagInput.value.trim();
+                    if (newTag) {
+                        const currentTags = tiddler.fields.tags || [];
+                        if (!currentTags.includes(newTag)) {
+                            const newTiddler = new $tw.Tiddler(tiddler, {
+                                tags: [...currentTags, newTag]
+                            });
+                            $tw.wiki.addTiddler(newTiddler);
+                            calendar.refetchEvents();
+                            updateTagToggles();
+                            tagInput.value = ''; // Clear the input
+                            
+                            // Refresh the context menu
+                            const event = new MouseEvent('contextmenu', {
+                                bubbles: true,
+                                cancelable: true,
+                                view: window,
+                                button: 2,
+                                buttons: 2,
+                                clientX: originalEvent.clientX,
+                                clientY: originalEvent.clientY
+                            });
+                            info.el.dispatchEvent(event);
+                        }
+                    }
+                }
+            });
 
-            // Add button
             const addButton = document.createElement('button');
             addButton.textContent = 'Add Tag';
             addButton.style.cssText = `
@@ -15190,31 +15396,119 @@ function initCalendar(e, M) {
                 border: none;
                 border-radius: 3px;
                 cursor: pointer;
+                width: 100%;
+                margin-top: 4px;
+                transition: background 0.2s;
             `;
+
+            addButton.addEventListener('mouseover', () => {
+                addButton.style.background = '#6888e8';
+            });
+            addButton.addEventListener('mouseout', () => {
+                addButton.style.background = '#5778d8';
+            });
 
             addButton.addEventListener('click', () => {
                 const newTag = tagInput.value.trim();
                 if (newTag) {
-                    const tiddlerTitle = info.event.title;
-                    const tiddler = $tw.wiki.getTiddler(tiddlerTitle);
-                    if (tiddler) {
-                        const currentTags = tiddler.fields.tags || [];
-                        if (!currentTags.includes(newTag)) {
-                            const newTiddler = new $tw.Tiddler(tiddler, {
-                                tags: [...currentTags, newTag]
-                            });
-                            $tw.wiki.addTiddler(newTiddler);
-                            calendar.render(); // Refresh calendar
-                            updateTagToggles(); // Update tag toggles
-                        }
+                    const currentTags = tiddler.fields.tags || [];
+                    if (!currentTags.includes(newTag)) {
+                        const newTiddler = new $tw.Tiddler(tiddler, {
+                            tags: [...currentTags, newTag]
+                        });
+                        $tw.wiki.addTiddler(newTiddler);
+                        calendar.refetchEvents();
+                        updateTagToggles();
                     }
                     contextMenu.remove();
                 }
             });
 
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete Event';
+            deleteButton.style.cssText = `
+                padding: 4px 8px;
+                background: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                width: 100%;
+                margin-top: 12px;
+                transition: background 0.2s;
+            `;
+
+            deleteButton.addEventListener('mouseover', () => {
+                deleteButton.style.background = '#c82333';
+            });
+
+            deleteButton.addEventListener('mouseout', () => {
+                deleteButton.style.background = '#dc3545';
+            });
+            
+            deleteButton.addEventListener('click', () => {
+                // Create confirmation dialog
+                const confirmDialog = document.createElement('div');
+                confirmDialog.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: #1e1e1e;
+                    border: 1px solid #333;
+                    border-radius: 4px;
+                    padding: 20px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+                    z-index: 1001;
+                    color: #ffffff;
+                    text-align: center;
+                `;
+
+                confirmDialog.innerHTML = `
+                    <p style="margin-bottom: 15px;">Are you sure you want to delete this event?</p>
+                    <button id="confirm-delete" style="
+                        background: #dc3545;
+                        color: white;
+                        border: none;
+                        border-radius: 3px;
+                        padding: 8px 16px;
+                        margin-right: 10px;
+                        cursor: pointer;
+                    ">Delete</button>
+                    <button id="cancel-delete" style="
+                        background: #6c757d;
+                        color: white;
+                        border: none;
+                        border-radius: 3px;
+                        padding: 8px 16px;
+                        cursor: pointer;
+                    ">Cancel</button>
+                `;
+
+
+                document.body.appendChild(confirmDialog);
+
+    // Handle confirmation dialog buttons
+            document.getElementById('confirm-delete').addEventListener('click', () => {
+                const tiddlerTitle = info.event.title;
+                $tw.wiki.deleteTiddler(tiddlerTitle);
+                calendar.refetchEvents();
+                confirmDialog.remove();
+                contextMenu.remove();
+            });
+
+            document.getElementById('cancel-delete').addEventListener('click', () => {
+                confirmDialog.remove();
+            });
+        });
+
             // Add elements to context menu
+            closeButtonContainer.appendChild(closeButton);
+            contextMenu.appendChild(closeButtonContainer);
+            contextMenu.appendChild(existingTagsContainer);
             contextMenu.appendChild(tagInput);
             contextMenu.appendChild(addButton);
+            contextMenu.appendChild(deleteButton);
 
             // Position the context menu
             contextMenu.style.left = e.pageX + 'px';
